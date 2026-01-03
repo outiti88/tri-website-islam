@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Outil de Tri Admin</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.css"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            padding: 20px;
+        }
+
+        /* --- UI DE L'ADMIN --- */
+        .admin-header {
+            background: white;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .btn {
+            background-color: #0073aa;
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+
+        .btn:hover {
+            background-color: #005177;
+        }
+
+        .output-area {
+            display: none; /* Caché par défaut */
+            margin-top: 20px;
+            background: #fff;
+            padding: 20px;
+            border: 2px solid #0073aa;
+        }
+
+        textarea {
+            width: 100%;
+            height: 300px;
+            font-family: monospace;
+            padding: 10px;
+        }
+
+        /* Style visuel lors du déplacement */
+        .sortable-ghost {
+            opacity: 0.4;
+            background-color: #c8ebfb !important;
+            border: 2px dashed #0073aa !important;
+        }
+
+        /* --- TON CSS ORIGINAL (Pour l'aperçu) --- */
+        .kutu-kapsayici {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            /* Ajout d'une min-height pour faciliter le drop */
+            min-height: 200px; 
+        }
+
+        .kutu {
+            position: relative;
+            flex: 0 0 calc(33.33% - 20px);
+            margin-bottom: 20px;
+            padding: 20px;
+            box-sizing: border-box;
+            background-color: white;
+            color: black;
+            border: 1px solid black;
+            border-radius: 5px;
+            box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);
+            cursor: grab; /* Curseur de main pour indiquer qu'on peut bouger */
+        }
+        
+        .kutu:active {
+            cursor: grabbing;
+        }
+
+        .kutu .ekstra-yazi {
+            position: absolute;
+            top: 0;
+            right: 10px;
+            color: #123;
+        }
+
+        @media(max-width:768px) {
+            .kutu {
+                flex: 0 0 calc(100% - 20px);
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="admin-header">
+        <div>
+            <h2>Interface de Tri</h2>
+            <p>Glissez et déposez les éléments pour les réorganiser.</p>
+        </div>
+        <button class="btn" onclick="generateCode()">✅ Valider & Générer le code</button>
+    </div>
+
+    <div id="resultContainer" class="output-area">
+        <h3>Code à copier dans WordPress :</h3>
+        <textarea id="finalCode"></textarea>
+    </div>
+
+    <div id="sortable-list" class="kutu-kapsayici">
+        <div class="kutu"><p>test</p> <span class="ekstra-yazi">🇮🇸</span></div>
+        <div class="kutu"><p>SWEDEN HD &amp; HEVC</p> <span class="ekstra-yazi">🇸🇪</span></div>
+        <div class="kutu"><p>SWEDEN SPORT HD &amp; HEVC</p> <span class="ekstra-yazi">🇸🇪</span></div>
+        <div class="kutu"><p>SWEDEN TV 4 PLAY PPV</p> <span class="ekstra-yazi">🇸🇪</span></div>
+        <div class="kutu"><p>SWEDEN DISCOVERY+ PPV</p> <span class="ekstra-yazi">🇸🇪</span></div>
+        <div class="kutu"><p>SWEDEN DAZN PPV</p> <span class="ekstra-yazi">🇸🇪</span></div>
+        <div class="kutu"><p>SWEDEN DISCOVERY+ FOTBOOL</p> <span class="ekstra-yazi">🇸🇪</span></div>
+        <div class="kutu"><p>SWEDEN C MORE EVENT</p> <span class="ekstra-yazi">🇸🇪</span></div>
+        <div class="kutu"><p>SWEDEN PREMIUM PLAY</p> <span class="ekstra-yazi">🇸🇪</span></div>
+        <div class="kutu"><p>SWEDEN VIAPLAY PPV</p> <span class="ekstra-yazi">🇸🇪</span></div>
+        <div class="kutu"><p>DENMARK HD &amp; HEVC</p> <span class="ekstra-yazi">🇸🇪</span></div>
+        <div class="kutu"><p>DENMARK SPORT HD &amp; HEVC</p> <span class="ekstra-yazi">#783</span></div>
+        <div class="kutu"><p>DENMARK PREMIUM PLAY</p> <span class="ekstra-yazi">#1049</span></div>
+        <div class="kutu"><p>DENMARK VIAPLAY PPV</p> <span class="ekstra-yazi">#1097</span></div>
+        <div class="kutu"><p>DENMARK TV2 PLAY</p> <span class="ekstra-yazi">#1585</span></div>
+        <div class="kutu"><p>DENMARK DISCOVERY+&nbsp;PPV</p> <span class="ekstra-yazi">#1540</span></div>
+        <div class="kutu"><p>DENMARK MOVIE PLAY</p> <span class="ekstra-yazi">#1587</span></div>
+        <div class="kutu"><p>NORWAY VIAPLAY PPV</p> <span class="ekstra-yazi">#1232</span></div>
+        <div class="kutu"><p>NORWAY DISCOVERY+ PPV</p> <span class="ekstra-yazi">#1539</span></div>
+        <div class="kutu"><p>NORWAY HD &amp; HEVC</p> <span class="ekstra-yazi">#896</span></div>
+        <div class="kutu"><p>NORWAY SPORT HD &amp; HEVC</p> <span class="ekstra-yazi">#777</span></div>
+        <div class="kutu"><p>NORWAY PREMIUM PLAY</p> <span class="ekstra-yazi">#1050</span></div>
+        <div class="kutu"><p>NORWAY TV2 PLAY</p> <span class="ekstra-yazi">#1584</span></div>
+        <div class="kutu"><p>FINLAND HD &amp; HEVC</p> <span class="ekstra-yazi">#951</span></div>
+        <div class="kutu"><p>FINLAND SPORT HD &amp; HEVC</p> <span class="ekstra-yazi">#952</span></div>
+        <div class="kutu"><p>FINLAND PREMIUM PLAY</p> <span class="ekstra-yazi">#1051</span></div>
+        <div class="kutu"><p>FINLAND VIAPLAY PPV</p> <span class="ekstra-yazi">#1233</span></div>
+        <div class="kutu"><p>4K UHD 3840P</p> <span class="ekstra-yazi">#1673</span></div>
+        <div class="kutu"><p>FR| FRANCE 4K</p> <span class="ekstra-yazi">#1011</span></div>
+        <div class="kutu"><p>FR| FRANCE FHD</p> <span class="ekstra-yazi">#1001</span></div>
+        <div class="kutu"><p>FR| FRANCE HD</p> <span class="ekstra-yazi">#616</span></div>
+        <div class="kutu"><p>FR| DOCUMENTAIRE HD</p> <span class="ekstra-yazi">#1395</span></div>
+        <div class="kutu"><p>FR| FRANCE LQ</p> <span class="ekstra-yazi">#1002</span></div>
+        <div class="kutu"><p>FR| ENFANTS HD</p> <span class="ekstra-yazi">#620</span></div>
+        <div class="kutu"><p>FR| AMAZON PRIME</p> <span class="ekstra-yazi">#1099</span></div>
+        <div class="kutu"><p>FR| SPORTS HD</p> <span class="ekstra-yazi">#619</span></div>
+        <div class="kutu"><p>FR| MYSPORT PPV</p> <span class="ekstra-yazi">#1603</span></div>
+        <div class="kutu"><p>FR| DAZN PPV</p> <span class="ekstra-yazi">#1555</span></div>
+        <div class="kutu"><p>FR| PREMIUM PLAY</p> <span class="ekstra-yazi">#1077</span></div>
+        <div class="kutu"><p>FR| CINE+ PREMIUM</p> <span class="ekstra-yazi">#906</span></div>
+        <div class="kutu"><p>FR| CARIBBEAN</p> <span class="ekstra-yazi">#1085</span></div>
+        <div class="kutu"><p>US| ENTERTAINMENT</p> <span class="ekstra-yazi">#672</span></div>
+        <div class="kutu"><p>US| NEWS NETWORK</p> <span class="ekstra-yazi">#667</span></div>
+        <div class="kutu"><p>US| KIDS NETWORK</p> <span class="ekstra-yazi">#666</span></div>
+        <div class="kutu"><p>US| MOVIES NETWORK</p> <span class="ekstra-yazi">#674</span></div>
+        <div class="kutu"><p>US| PLUTO TV</p> <span class="ekstra-yazi">#1211</span></div>
+        <div class="kutu"><p>US| SPORTS NETWORK</p> <span class="ekstra-yazi">#680</span></div>
+        <div class="kutu"><p>US| DAZN PPV</p> <span class="ekstra-yazi">#1521</span></div>
+        <div class="kutu"><p>US| PARAMOUNT+ PPV</p> <span class="ekstra-yazi">#1596</span></div>
+        <div class="kutu"><p>US| B1G+ PPV</p> <span class="ekstra-yazi">#1527</span></div>
+        <div class="kutu"><p>US| PEACOCK PPV</p> <span class="ekstra-yazi">#1631</span></div>
+        <div class="kutu"><p>US| BALLY NETWORK</p> <span class="ekstra-yazi">#1030</span></div>
+        <div class="kutu"><p>US| NBA PACKAGE</p> <span class="ekstra-yazi">#676</span></div>
+        <div class="kutu"><p>US| NCAAF PACKAGE</p> <span class="ekstra-yazi">#678</span></div>
+        <div class="kutu"><p>US| NHL PACKAGE</p> <span class="ekstra-yazi">#677</span></div>
+        <div class="kutu"><p>US| NFL PACKAGE</p> <span class="ekstra-yazi">#675</span></div>
+        <div class="kutu"><p>US| MLB PACKAGE</p> <span class="ekstra-yazi">#804</span></div>
+        <div class="kutu"><p>US| MILB TV PPV</p> <span class="ekstra-yazi">#1572</span></div>
+        <div class="kutu"><p>US| FLO SPORTS PPV</p> <span class="ekstra-yazi">#1525</span></div>
+        <div class="kutu"><p>US| FITE TV PPV</p> <span class="ekstra-yazi">#1568</span></div>
+        <div class="kutu"><p>US| DIRTVISION PPV</p> <span class="ekstra-yazi">#1567</span></div>
+        <div class="kutu"><p>US| MLS NETWORK</p> <span class="ekstra-yazi">#1073</span></div>
+        <div class="kutu"><p>US| FLO NETWORK</p> <span class="ekstra-yazi">#1334</span></div>
+        <div class="kutu"><p>US| ABC NETWORK</p> <span class="ekstra-yazi">#662</span></div>
+        <div class="kutu"><p>US| CBS NETWORK</p> <span class="ekstra-yazi">#665</span></div>
+        <div class="kutu"><p>US| FOX NETWORK</p> <span class="ekstra-yazi">#663</span></div>
+        <div class="kutu"><p>US| NBC NETWORK</p> <span class="ekstra-yazi">#664</span></div>
+        <div class="kutu"><p>US| PBS NETWORK</p> <span class="ekstra-yazi">#921</span></div>
+        <div class="kutu"><p>US| CW/MY NETWORK</p> <span class="ekstra-yazi">#673</span></div>
+        <div class="kutu"><p>US| BIBLICAL/RELIGIOUS</p> <span class="ekstra-yazi">#853</span></div>
+        <div class="kutu"><p>US| CINEMANIA HOLLYWOOD</p> <span class="ekstra-yazi">#1642</span></div>
+        <div class="kutu"><p>US| CINEMANIA TV SHOWS</p> <span class="ekstra-yazi">#1611</span></div>
+        <div class="kutu"><p>US| STARZ NETWORK</p> <span class="ekstra-yazi">#1349</span></div>
+        <div class="kutu"><p>US| PARAMOUNT+</p> <span class="ekstra-yazi">#1347</span></div>
+        <div class="kutu"><p>US| AMC+ NETWORK</p> <span class="ekstra-yazi">#1348</span></div>
+        <div class="kutu"><p>US| PEACOCK NETWORK</p> <span class="ekstra-yazi">#1346</span></div>
+        <div class="kutu"><p>US| HBO MAX NETWORK</p> <span class="ekstra-yazi">#1345</span></div>
+        <div class="kutu"><p>US| HULU NETWORK</p> <span class="ekstra-yazi">#1344</span></div>
+        <div class="kutu"><p>US| NAT GEO+ NETWORK</p> <span class="ekstra-yazi">#1514</span></div>
+        <div class="kutu"><p>US| DISNEY+ NETWORK</p> <span class="ekstra-yazi">#1515</span></div>
+        <div class="kutu"><p>US| ESPN PLUS</p> <span class="ekstra-yazi">#1118</span></div>
+        <div class="kutu"><p>US| ESPN PLAY</p> <span class="ekstra-yazi">#860</span></div>
+        <div class="kutu"><p>24/7 MOVIES &amp; SERIES</p> <span class="ekstra-yazi">#765</span></div>
+        <div class="kutu"><p>NA| HOCKEY LEAGUE</p> <span class="ekstra-yazi">#1117</span></div>
+        <div class="kutu"><p>NA| PPV &amp; LIVE EVENTS</p> <span class="ekstra-yazi">#668</span></div>
+        <div class="kutu"><p>US| VIX+ DEPORTES</p> <span class="ekstra-yazi">#1668</span></div>
+        <div class="kutu"><p>CA| ENGLISH</p> <span class="ekstra-yazi">#682</span></div>
+        <div class="kutu"><p>CA| FRENCH</p> <span class="ekstra-yazi">#669</span></div>
+        <div class="kutu"><p>CA| KIDS</p> <span class="ekstra-yazi">#670</span></div>
+        <div class="kutu"><p>CA| LOCALS</p> <span class="ekstra-yazi">#683</span></div>
+        <div class="kutu"><p>CA| SPORT</p> <span class="ekstra-yazi">#671</span></div>
+        <div class="kutu"><p>CA| SPORTSNET</p> <span class="ekstra-yazi">#1630</span></div>
+        <div class="kutu"><p>CA| STINGRAY</p> <span class="ekstra-yazi">#1604</span></div>
+        <div class="kutu"><p>CA| FOREIGN</p> <span class="ekstra-yazi">#1605</span></div>
+        <div class="kutu"><p>CA| DAZN PPV</p> <span class="ekstra-yazi">#1522</span></div>
+        <div class="kutu"><p>CA| AHL PPV</p> <span class="ekstra-yazi">#1526</span></div>
+        <div class="kutu"><p>CA| QMJHL PPV</p> <span class="ekstra-yazi">#1563</span></div>
+        <div class="kutu"><p>CA| OHL PPV</p> <span class="ekstra-yazi">#1564</span></div>
+        <div class="kutu"><p>CA| WHL PPV</p> <span class="ekstra-yazi">#1565</span></div>
+        <div class="kutu"><p>FORMULA 1 + MOTO GP</p> <span class="ekstra-yazi">#869</span></div>
+        <div class="kutu"><p>NL| ALGEMEEN</p> <span class="ekstra-yazi">#1511</span></div>
+        <div class="kutu"><p>NL| SPORT</p> <span class="ekstra-yazi">#1422</span></div>
+        <div class="kutu"><p>NL| VIAPLAY PPV VIP</p> <span class="ekstra-yazi">#1644</span></div>
+        <div class="kutu"><p>NL| VIAPLAY SPORT</p> <span class="ekstra-yazi">#1151</span></div>
+        <div class="kutu"><p>NL| ESPN PLAY</p> <span class="ekstra-yazi">#1519</span></div>
+        <div class="kutu"><p>NL| DISCOVERY+ PPV</p> <span class="ekstra-yazi">#1538</span></div>
+        <div class="kutu"><p>NL| FILMS</p> <span class="ekstra-yazi">#1431</span></div>
+        <div class="kutu"><p>NL| KINDEREN</p> <span class="ekstra-yazi">#1424</span></div>
+        <div class="kutu"><p>NL| ENTERTAINMENT</p> <span class="ekstra-yazi">#1425</span></div>
+        <div class="kutu"><p>NL| DOCUMENTAIRE</p> <span class="ekstra-yazi">#1427</span></div>
+        <div class="kutu"><p>NL| MUZIEK</p> <span class="ekstra-yazi">#1426</span></div>
+        <div class="kutu"><p>NL| REGIONAAL</p> <span class="ekstra-yazi">#1428</span></div>
+        <div class="kutu"><p>NL| BUITENLAND</p> <span class="ekstra-yazi">#1429</span></div>
+        <div class="kutu"><p>EU| NEDERLAND ULTRA 4K</p> <span class="ekstra-yazi">#1430</span></div>
+        <div class="kutu"><p>EU| NETHERLANDS SD</p> <span class="ekstra-yazi">#1290</span></div>
+        <div class="kutu"><p>BE| ALGEMEEN</p> <span class="ekstra-yazi">#1451</span></div>
+        <div class="kutu"><p>BE| ENTERTAINMENT</p> <span class="ekstra-yazi">#1452</span></div>
+        <div class="kutu"><p>BE| KINDEREN</p> <span class="ekstra-yazi">#1453</span></div>
+        <div class="kutu"><p>BE| SPORTS</p> <span class="ekstra-yazi">#1454</span></div>
+        <div class="kutu"><p>BE| DOCUMENTAIRE</p> <span class="ekstra-yazi">#1455</span></div>
+        <div class="kutu"><p>BE| WALLONIË</p> <span class="ekstra-yazi">#1159</span></div>
+        <div class="kutu"><p>BE| DAZN EXCLUSIVE</p> <span class="ekstra-yazi">#1551</span></div>
+        <div class="kutu"><p>BE| DAZN PPV</p> <span class="ekstra-yazi">#1533</span></div>
+        <div class="kutu"><p>EU| LUXEMBOURG</p> <span class="ekstra-yazi">#1461</span></div>
+        <div class="kutu"><p>ES| GENERAL</p> <span class="ekstra-yazi">#1462</span></div>
+        <div class="kutu"><p>ES| PELÍCULAS</p> <span class="ekstra-yazi">#1463</span></div>
+        <div class="kutu"><p>ES| DEPORTE</p> <span class="ekstra-yazi">#1464</span></div>
+        <div class="kutu"><p>ES| DAZN</p> <span class="ekstra-yazi">#1465</span></div>
+        <div class="kutu"><p>ES| DAZN PPV</p> <span class="ekstra-yazi">#1520</span></div>
+        <div class="kutu"><p>ES| FEF TV EVENTOS</p> <span class="ekstra-yazi">#1588</span></div>
+        <div class="kutu"><p>ES| CULTURALES</p> <span class="ekstra-yazi">#1466</span></div>
+        <div class="kutu"><p>ES| NINIOS</p> <span class="ekstra-yazi">#1467</span></div>
+        <div class="kutu"><p>ES| LOCALES</p> <span class="ekstra-yazi">#1468</span></div>
+        <div class="kutu"><p>ES| MUSICA</p> <span class="ekstra-yazi">#1597</span></div>
+        <div class="kutu"><p>24/7 ESPANA 4K</p> <span class="ekstra-yazi">#1272</span></div>
+        <div class="kutu"><p>PT| GENERALISTAS</p> <span class="ekstra-yazi">#1440</span></div>
+        <div class="kutu"><p>PT| NOTICIAS</p> <span class="ekstra-yazi">#1441</span></div>
+        <div class="kutu"><p>PT| DESPORTO</p> <span class="ekstra-yazi">#1442</span></div>
+        <div class="kutu"><p>PT| FILMES E SÉRIES</p> <span class="ekstra-yazi">#1443</span></div>
+        <div class="kutu"><p>PT| EXCLUSIVO</p> <span class="ekstra-yazi">#1444</span></div>
+        <div class="kutu"><p>PT| CULTURA</p> <span class="ekstra-yazi">#1445</span></div>
+        <div class="kutu"><p>PT| CRIANCAS</p> <span class="ekstra-yazi">#1446</span></div>
+        <div class="kutu"><p>PT| INTRETENIMENTO</p> <span class="ekstra-yazi">#1447</span></div>
+        <div class="kutu"><p>PT| RELIGIAO</p> <span class="ekstra-yazi">#1448</span></div>
+        <div class="kutu"><p>PT| MUSICA</p> <span class="ekstra-yazi">#1449</span></div>
+        <div class="kutu"><p>PT| INTERNACIONAL</p> <span class="ekstra-yazi">#1450</span></div>
+        <div class="kutu"><p>PT| DAZN PPV</p> <span class="ekstra-yazi">#1552</span></div>
+        <div class="kutu"><p>BR| BRASIL</p> <span class="ekstra-yazi">#99</span></div>
+        <div class="kutu"><p>BR| BRASIL DAZN PPV</p> <span class="ekstra-yazi">#1562</span></div>
+        <div class="kutu"><p>EU| GERMANY HEVC</p> <span class="ekstra-yazi">#1235</span></div>
+        <div class="kutu"><p>DE| ALLGEMEIN</p> <span class="ekstra-yazi">#955</span></div>
+        <div class="kutu"><p>DE| KINDER</p> <span class="ekstra-yazi">#300</span></div>
+        <div class="kutu"><p>DE| UNTERHALTUNG</p> <span class="ekstra-yazi">#985</span></div>
+        <div class="kutu"><p>DE| VODAFONE GO</p> <span class="ekstra-yazi">#1293</span></div>
+        <div class="kutu"><p>DE| DYN NETWORK</p> <span class="ekstra-yazi">#1517</span></div>
+        <div class="kutu"><p>DE| SKY GO FILME</p> <span class="ekstra-yazi">#1217</span></div>
+        <div class="kutu"><p>DE| SKY MAX PPV&nbsp;4K</p> <span class="ekstra-yazi">#1547</span></div>
+        <div class="kutu"><p>DE| FILME UND SERIEN</p> <span class="ekstra-yazi">#940</span></div>
+        <div class="kutu"><p>DE| PREMIUM PLAY</p> <span class="ekstra-yazi">#1269</span></div>
+        <div class="kutu"><p>DE| PLEX TV</p> <span class="ekstra-yazi">#1575</span></div>
+        <div class="kutu"><p>DE| DAZN PPV</p> <span class="ekstra-yazi">#1086</span></div>
+        <div class="kutu"><p>DE| DISCOVERY+ PPV</p> <span class="ekstra-yazi">#1537</span></div>
+        <div class="kutu"><p>DE| AMAZON PRIME</p> <span class="ekstra-yazi">#1434</span></div>
+        <div class="kutu"><p>DE| MYSPORT PPV</p> <span class="ekstra-yazi">#1602</span></div>
+        <div class="kutu"><p>DE| AMAZON PRIME PPV</p> <span class="ekstra-yazi">#1090</span></div>
+        <div class="kutu"><p>DE| SPORTS</p> <span class="ekstra-yazi">#984</span></div>
+        <div class="kutu"><p>DE| BUNDESLIGA</p> <span class="ekstra-yazi">#1646</span></div>
+        <div class="kutu"><p>DE| RTL+ PPV</p> <span class="ekstra-yazi">#1254</span></div>
+        <div class="kutu"><p>DE| MAGENTA PPV</p> <span class="ekstra-yazi">#1104</span></div>
+        <div class="kutu"><p>DE| BUNDESLIGA REPLAY</p> <span class="ekstra-yazi">#1342</span></div>
+        <div class="kutu"><p>DE| SKY GO SPORT</p> <span class="ekstra-yazi">#1414</span></div>
+        <div class="kutu"><p>DE| SKY GO KINO</p> <span class="ekstra-yazi">#1419</span></div>
+        <div class="kutu"><p>SWITZERLAND</p> <span class="ekstra-yazi">#349</span></div>
+        <div class="kutu"><p>AUSTRIA</p> <span class="ekstra-yazi">#1305</span></div>
+        <div class="kutu"><p>CH| DAZN PPV</p> <span class="ekstra-yazi">#1534</span></div>
+        <div class="kutu"><p>AT| DAZN PPV</p> <span class="ekstra-yazi">#1536</span></div>
+        <div class="kutu"><p>PL| KANALY (NA)</p> <span class="ekstra-yazi">#1480</span></div>
+        <div class="kutu"><p>PL| OGÓLNOTEMATYCZNE</p> <span class="ekstra-yazi">#1469</span></div>
+        <div class="kutu"><p>PL| FILMOWE</p> <span class="ekstra-yazi">#1470</span></div>
+        <div class="kutu"><p>PL| KANALY TVN PLAYER</p> <span class="ekstra-yazi">#1628</span></div>
+        <div class="kutu"><p>PL| DLA DZIECI</p> <span class="ekstra-yazi">#1471</span></div>
+        <div class="kutu"><p>PL| DOKUMENTALNE</p> <span class="ekstra-yazi">#1472</span></div>
+        <div class="kutu"><p>PL| SPORTOWE</p> <span class="ekstra-yazi">#1473</span></div>
+        <div class="kutu"><p>PL| INFORMACYJNE</p> <span class="ekstra-yazi">#1474</span></div>
+        <div class="kutu"><p>PL| MUZYCZNE</p> <span class="ekstra-yazi">#1475</span></div>
+        <div class="kutu"><p>PL| REGIONALNE</p> <span class="ekstra-yazi">#1476</span></div>
+        <div class="kutu"><p>PL| VIAPLAY PPV VIP</p> <span class="ekstra-yazi">#1645</span></div>
+        <div class="kutu"><p>PL| VIAPLAY</p> <span class="ekstra-yazi">#1477</span></div>
+        <div class="kutu"><p>PL| EUROSPORT EXTRA</p> <span class="ekstra-yazi">#1478</span></div>
+        <div class="kutu"><p>PL| WALKI PPV</p> <span class="ekstra-yazi">#1479</span></div>
+        <div class="kutu"><p>UK| GENERAL HEVC</p> <span class="ekstra-yazi">#1666</span></div>
+        <div class="kutu"><p>UK| ENTERTAINMENT HEVC</p> <span class="ekstra-yazi">#1665</span></div>
+        <div class="kutu"><p>UK| DOCUMENTARY HEVC</p> <span class="ekstra-yazi">#1664</span></div>
+        <div class="kutu"><p>UK| SPORTS HEVC</p> <span class="ekstra-yazi">#1661</span></div>
+        <div class="kutu"><p>UK| KIDS HEVC</p> <span class="ekstra-yazi">#1660</span></div>
+        <div class="kutu"><p>UK| MOVIES HEVC</p> <span class="ekstra-yazi">#1659</span></div>
+        <div class="kutu"><p>UK| INDIA EU HEVC</p> <span class="ekstra-yazi">#1662</span></div>
+        <div class="kutu"><p>UK| GENERAL</p> <span class="ekstra-yazi">#519</span></div>
+        <div class="kutu"><p>UK| NEWS</p> <span class="ekstra-yazi">#905</span></div>
+        <div class="kutu"><p>UK| KIDS</p> <span class="ekstra-yazi">#520</span></div>
+        <div class="kutu"><p>UK| ENTERTAINMENT</p> <span class="ekstra-yazi">#521</span></div>
+        <div class="kutu"><p>UK| MOVIES</p> <span class="ekstra-yazi">#522</span></div>
+        <div class="kutu"><p>UK| DOCUMENTARY</p> <span class="ekstra-yazi">#524</span></div>
+        <div class="kutu"><p>UK| SKY STORE</p> <span class="ekstra-yazi">#1350</span></div>
+        <div class="kutu"><p>UK| MUSIC</p> <span class="ekstra-yazi">#523</span></div>
+        <div class="kutu"><p>UK| DISCOVERY +</p> <span class="ekstra-yazi">#1025</span></div>
+        <div class="kutu"><p>UK| DISCOVERY + PPV</p> <span class="ekstra-yazi">#1518</span></div>
+        <div class="kutu"><p>UK| ESPN+ PPV</p> <span class="ekstra-yazi">#1612</span></div>
+        <div class="kutu"><p>UK| DAZN PPV</p> <span class="ekstra-yazi">#1523</span></div>
+        <div class="kutu"><p>UK| SUPER LEAGUE+ PPV</p> <span class="ekstra-yazi">#1655</span></div>
+        <div class="kutu"><p>UK| SPORTS</p> <span class="ekstra-yazi">#401</span></div>
+        <div class="kutu"><p>UK| WORLD SPORTS</p> <span class="ekstra-yazi">#1309</span></div>
+        <div class="kutu"><p>UK| UEFA PPV</p> <span class="ekstra-yazi">#1658</span></div>
+        <div class="kutu"><p>UK| SOCCER REPLAY</p> <span class="ekstra-yazi">#1322</span></div>
+        <div class="kutu"><p>UK| UFC/BOXING PPV</p> <span class="ekstra-yazi">#1592</span></div>
+        <div class="kutu"><p>UK| OTHER SPORTS</p> <span class="ekstra-yazi">#970</span></div>
+        <div class="kutu"><p>UK| EPL PREMIERE LEAGUE</p> <span class="ekstra-yazi">#1308</span></div>
+        <div class="kutu"><p>UK| SKY SPORTS RED BUTTON</p> <span class="ekstra-yazi">#1571</span></div>
+        <div class="kutu"><p>UK| VIAPLAY PPV VIP</p> <span class="ekstra-yazi">#1648</span></div>
+        <div class="kutu"><p>UK| VIDIO EPL PPV</p> <span class="ekstra-yazi">#1569</span></div>
+        <div class="kutu"><p>UK| CHAMPIONSHIP</p> <span class="ekstra-yazi">#1505</span></div>
+        <div class="kutu"><p>UK| LEAGUE ONE</p> <span class="ekstra-yazi">#1503</span></div>
+        <div class="kutu"><p>UK| LEAGUE TWO</p> <span class="ekstra-yazi">#1504</span></div>
+        <div class="kutu"><p>UK| NATIONAL LEAGUE</p> <span class="ekstra-yazi">#1367</span></div>
+        <div class="kutu"><p>UK| SCOTTISH FOOTBALL</p> <span class="ekstra-yazi">#1307</span></div>
+        <div class="kutu"><p>UK| FA PLAYER</p> <span class="ekstra-yazi">#1610</span></div>
+        <div class="kutu"><p>UK| GAA GO PPV</p> <span class="ekstra-yazi">#1581</span></div>
+        <div class="kutu"><p>UK| AMAZON PRIME +</p> <span class="ekstra-yazi">#1127</span></div>
+        <div class="kutu"><p>UK| FORMULA 1 + MOTOGP</p> <span class="ekstra-yazi">#1580</span></div>
+        <div class="kutu"><p>UK| LA LIGA TEAM PPV</p> <span class="ekstra-yazi">#1591</span></div>
+        <div class="kutu"><p>UK| SERIE A TEAM PPV</p> <span class="ekstra-yazi">#1590</span></div>
+        <div class="kutu"><p>UK| ULSTER GAA PPV</p> <span class="ekstra-yazi">#1622</span></div>
+        <div class="kutu"><p>UK| RUGBY PPV</p> <span class="ekstra-yazi">#1621</span></div>
+        <div class="kutu"><p>UK| EUROSPORT XTRA</p> <span class="ekstra-yazi">#1124</span></div>
+        <div class="kutu"><p>UK| VIAPLAY PPV</p> <span class="ekstra-yazi">#1165</span></div>
+        <div class="kutu"><p>UK| PAY PER VIEW&nbsp;PPV</p> <span class="ekstra-yazi">#1528</span></div>
+        <div class="kutu"><p>UK| 24/7 MOVIES &amp; SERIES</p> <span class="ekstra-yazi">#615</span></div>
+        <div class="kutu"><p>UK| SUPERCROSS PPV</p> <span class="ekstra-yazi">#1647</span></div>
+        <div class="kutu"><p>UK| PPV EVENTS</p> <span class="ekstra-yazi">#614</span></div>
+        <div class="kutu"><p>UK| HUB PREMIER PPV</p> <span class="ekstra-yazi">#1570</span></div>
+        <div class="kutu"><p>UK| MATCHROOM PPV</p> <span class="ekstra-yazi">#1566</span></div>
+        <div class="kutu"><p>UK| MOLA PPV</p> <span class="ekstra-yazi">#1579</span></div>
+        <div class="kutu"><p>IR| IRELAND</p> <span class="ekstra-yazi">#622</span></div>
+        <div class="kutu"><p>IR| NIFL PPV</p> <span class="ekstra-yazi">#1629</span></div>
+        <div class="kutu"><p>IR| CLUBBER PPV</p> <span class="ekstra-yazi">#1559</span></div>
+        <div class="kutu"><p>IR| SETANTA PPV</p> <span class="ekstra-yazi">#1560</span></div>
+        <div class="kutu"><p>IR| LOI PPV</p> <span class="ekstra-yazi">#1561</span></div>
+        <div class="kutu"><p>CHRISTMAS</p> <span class="ekstra-yazi">#1542</span></div>
+        <div class="kutu"><p>AUSTRALIA</p> <span class="ekstra-yazi">#384</span></div>
+        <div class="kutu"><p>AU| NRL TV PPV</p> <span class="ekstra-yazi">#1593</span></div>
+        <div class="kutu"><p>AU| STAN PPV</p> <span class="ekstra-yazi">#1623</span></div>
+        <div class="kutu"><p>AU| AFL PPV</p> <span class="ekstra-yazi">#1656</span></div>
+        <div class="kutu"><p>AU| ESPN PLAY PPV</p> <span class="ekstra-yazi">#1532</span></div>
+        <div class="kutu"><p>NZ| NEW ZEALAND</p> <span class="ekstra-yazi">#1007</span></div>
+        <div class="kutu"><p>NZ| SKY SPORTS NZ</p> <span class="ekstra-yazi">#1606</span></div>
+        <div class="kutu"><p>ITALY UHD/4K</p> <span class="ekstra-yazi">#1078</span></div>
+        <div class="kutu"><p>ITALY FHD/HEVC</p> <span class="ekstra-yazi">#1079</span></div>
+        <div class="kutu"><p>IT| GENERALE</p> <span class="ekstra-yazi">#603</span></div>
+        <div class="kutu"><p>IT| REGIONALI</p> <span class="ekstra-yazi">#1108</span></div>
+        <div class="kutu"><p>IT| CINEMA</p> <span class="ekstra-yazi">#1080</span></div>
+        <div class="kutu"><p>IT| AMAZON PRIME</p> <span class="ekstra-yazi">#1101</span></div>
+        <div class="kutu"><p>IT| SKYGO SPORTS</p> <span class="ekstra-yazi">#1627</span></div>
+        <div class="kutu"><p>IT| DAZN</p> <span class="ekstra-yazi">#1149</span></div>
+        <div class="kutu"><p>IT| SPORT</p> <span class="ekstra-yazi">#607</span></div>
+        <div class="kutu"><p>IT| DISCOVERY+</p> <span class="ekstra-yazi">#1170</span></div>
+        <div class="kutu"><p>IT| BAMBINI</p> <span class="ekstra-yazi">#606</span></div>
+        <div class="kutu"><p>IT| DOCUMENTARIO</p> <span class="ekstra-yazi">#605</span></div>
+        <div class="kutu"><p>IT| BASKET</p> <span class="ekstra-yazi">#1095</span></div>
+        <div class="kutu"><p>IT| FORMULA 1 / MOTOGP</p> <span class="ekstra-yazi">#1116</span></div>
+        <div class="kutu"><p>IT| PLUTO TV</p> <span class="ekstra-yazi">#1267</span></div>
+        <div class="kutu"><p>IT| SERIE A/B/C</p> <span class="ekstra-yazi">#1432</span></div>
+        <div class="kutu"><p>TR| TURKIYE</p> <span class="ekstra-yazi">#1258</span></div>
+        <div class="kutu"><p>TR| AVRUPA &amp; YEREL</p> <span class="ekstra-yazi">#1259</span></div>
+        <div class="kutu"><p>TR| HABER KANALLARI</p> <span class="ekstra-yazi">#1260</span></div>
+        <div class="kutu"><p>TR| MUZIK KANALLARI</p> <span class="ekstra-yazi">#1261</span></div>
+        <div class="kutu"><p>TR| COCUK &amp; DINI</p> <span class="ekstra-yazi">#1262</span></div>
+        <div class="kutu"><p>TR| BELGESEL KANALLARI</p> <span class="ekstra-yazi">#1263</span></div>
+        <div class="kutu"><p>TR| SINEMA KANALLARI</p> <span class="ekstra-yazi">#1264</span></div>
+        <div class="kutu"><p>TR| SPOR KANALLARI</p> <span class="ekstra-yazi">#1265</span></div>
+        <div class="kutu"><p>TR| MAC KANALLARI</p> <span class="ekstra-yazi">#1266</span></div>
+        <div class="kutu"><p>TR| DIZILER VIP</p> <span class="ekstra-yazi">#1294</span></div>
+        <div class="kutu"><p>AZERBAYCAN</p> <span class="ekstra-yazi">#299</span></div>
+        <div class="kutu"><p>UZBEKISTAN</p> <span class="ekstra-yazi">#1343</span></div>
+        <div class="kutu"><p>KURDISTAN</p> <span class="ekstra-yazi">#26</span></div>
+        <div class="kutu"><p>RAMADAN 2024 ?????</p> <span class="ekstra-yazi">#1669</span></div>
+        <div class="kutu"><p>ARABIC AM +6H</p> <span class="ekstra-yazi">#1024</span></div>
+        <div class="kutu"><p>AR| MOROCCO</p> <span class="ekstra-yazi">#107</span></div>
+        <div class="kutu"><p>AR| ALGERIA</p> <span class="ekstra-yazi">#108</span></div>
+        <div class="kutu"><p>AR| TUNISIA</p> <span class="ekstra-yazi">#109</span></div>
+        <div class="kutu"><p>AR| MBC/ROTANA</p> <span class="ekstra-yazi">#117</span></div>
+        <div class="kutu"><p>AR| OSN</p> <span class="ekstra-yazi">#1089</span></div>
+        <div class="kutu"><p>AR| BEIN SPORTS AFC</p> <span class="ekstra-yazi">#1654</span></div>
+        <div class="kutu"><p>AR| BEIN SPORTS 8K ???</p> <span class="ekstra-yazi">#1595</span></div>
+        <div class="kutu"><p>AR| BEIN SPORTS ???</p> <span class="ekstra-yazi">#1531</span></div>
+        <div class="kutu"><p>AR| BEIN SPORTS FHD</p> <span class="ekstra-yazi">#1155</span></div>
+        <div class="kutu"><p>AR| BEIN SPORTS HEVC</p> <span class="ekstra-yazi">#34</span></div>
+        <div class="kutu"><p>AR| BEIN SPORTS HD</p> <span class="ekstra-yazi">#1482</span></div>
+        <div class="kutu"><p>AR| BEIN SPORTS SD</p> <span class="ekstra-yazi">#1483</span></div>
+        <div class="kutu"><p>AR| BEIN ENTERTAINMENT</p> <span class="ekstra-yazi">#998</span></div>
+        <div class="kutu"><p>AR| ALKASS</p> <span class="ekstra-yazi">#1046</span></div>
+        <div class="kutu"><p>AR| STARZPLAY / AD SPORTS</p> <span class="ekstra-yazi">#1292</span></div>
+        <div class="kutu"><p>AR| SSC SPORTS</p> <span class="ekstra-yazi">#1122</span></div>
+        <div class="kutu"><p>AR| NEWS</p> <span class="ekstra-yazi">#121</span></div>
+        <div class="kutu"><p>AR| KIDS</p> <span class="ekstra-yazi">#124</span></div>
+        <div class="kutu"><p>AR| UAE</p> <span class="ekstra-yazi">#1485</span></div>
+        <div class="kutu"><p>AR| ISLAMIC</p> <span class="ekstra-yazi">#123</span></div>
+        <div class="kutu"><p>AR| AL-MAJD GROUP</p> <span class="ekstra-yazi">#1082</span></div>
+        <div class="kutu"><p>AR| EGYPT</p> <span class="ekstra-yazi">#113</span></div>
+        <div class="kutu"><p>AR| SYRIA</p> <span class="ekstra-yazi">#116</span></div>
+        <div class="kutu"><p>AR| LEBANON</p> <span class="ekstra-yazi">#168</span></div>
+        <div class="kutu"><p>AR| SHAHID. VIP</p> <span class="ekstra-yazi">#1340</span></div>
+        <div class="kutu"><p>AR| IRAQ</p> <span class="ekstra-yazi">#118</span></div>
+        <div class="kutu"><p>AR| JORDAN</p> <span class="ekstra-yazi">#1172</span></div>
+        <div class="kutu"><p>AR| PALASTINA</p> <span class="ekstra-yazi">#1171</span></div>
+        <div class="kutu"><p>AR| MAURITANIA</p> <span class="ekstra-yazi">#734</span></div>
+        <div class="kutu"><p>AR| SUDAN</p> <span class="ekstra-yazi">#120</span></div>
+        <div class="kutu"><p>AR| LIBYA</p> <span class="ekstra-yazi">#735</span></div>
+        <div class="kutu"><p>AR| SAUDIA ARABIA</p> <span class="ekstra-yazi">#1484</span></div>
+        <div class="kutu"><p>AR| OMAN</p> <span class="ekstra-yazi">#1488</span></div>
+        <div class="kutu"><p>AR| BAHRAIN</p> <span class="ekstra-yazi">#1486</span></div>
+        <div class="kutu"><p>AR| QATAR</p> <span class="ekstra-yazi">#119</span></div>
+        <div class="kutu"><p>AR| KUWAIT</p> <span class="ekstra-yazi">#1487</span></div>
+        <div class="kutu"><p>AR| YEMEN</p> <span class="ekstra-yazi">#801</span></div>
+        <div class="kutu"><p>AR| SHAHID SERIES</p> <span class="ekstra-yazi">#1020</span></div>
+        <div class="kutu"><p>AR| SHAHID. CINEMA</p> <span class="ekstra-yazi">#1048</span></div>
+        <div class="kutu"><p>AR| WEYYAK</p> <span class="ekstra-yazi">#1199</span></div>
+        <div class="kutu"><p>AR| WATCHBOX 4K</p> <span class="ekstra-yazi">#1574</span></div>
+        <div class="kutu"><p>AR| MAJESTIC 4K</p> <span class="ekstra-yazi">#1573</span></div>
+        <div class="kutu"><p>AR| HYDRA 4k</p> <span class="ekstra-yazi">#1657</span></div>
+        <div class="kutu"><p>AR| ACTORS 4K</p> <span class="ekstra-yazi">#1577</span></div>
+        <div class="kutu"><p>AR| ROYA</p> <span class="ekstra-yazi">#1578</span></div>
+        <div class="kutu"><p>AR| NETFLIX</p> <span class="ekstra-yazi">#1057</span></div>
+        <div class="kutu"><p>AR| AMAZON PRIME</p> <span class="ekstra-yazi">#1435</span></div>
+        <div class="kutu"><p>AR| HBO</p> <span class="ekstra-yazi">#1436</span></div>
+        <div class="kutu"><p>AR| HULU</p> <span class="ekstra-yazi">#1437</span></div>
+        <div class="kutu"><p>AR| TOD</p> <span class="ekstra-yazi">#1438</span></div>
+        <div class="kutu"><p>AR| VIVO</p> <span class="ekstra-yazi">#1439</span></div>
+        <div class="kutu"><p>AR| APPLE+ MLS PPV</p> <span class="ekstra-yazi">#1508</span></div>
+        <div class="kutu"><p>AR| SHOOF DRAMA</p> <span class="ekstra-yazi">#1026</span></div>
+        <div class="kutu"><p>AR| SHOOF COMEDY</p> <span class="ekstra-yazi">#1023</span></div>
+        <div class="kutu"><p>AR| STARZ PLAY</p> <span class="ekstra-yazi">#1420</span></div>
+        <div class="kutu"><p>AR| WORLD OF&nbsp;COOKING</p> <span class="ekstra-yazi">#1543</span></div>
+        <div class="kutu"><p>AR| CHEF OMAR</p> <span class="ekstra-yazi">#1074</span></div>
+        <div class="kutu"><p>AR| ANGHAMI</p> <span class="ekstra-yazi">#1166</span></div>
+        <div class="kutu"><p>AR| MUSIC</p> <span class="ekstra-yazi">#125</span></div>
+        <div class="kutu"><p>AR| CHRISTIAN</p> <span class="ekstra-yazi">#122</span></div>
+        <div class="kutu"><p>AR| BOX OFFICE FHD</p> <span class="ekstra-yazi">#945</span></div>
+        <div class="kutu"><p>AR| SHOWTIME</p> <span class="ekstra-yazi">#578</span></div>
+        <div class="kutu"><p>AR| BEIN ONDEMAND</p> <span class="ekstra-yazi">#1067</span></div>
+        <div class="kutu"><p>AR| WATCH IT</p> <span class="ekstra-yazi">#1393</span></div>
+        <div class="kutu"><p>AFR| AZAM NETWORK</p> <span class="ekstra-yazi">#1362</span></div>
+        <div class="kutu"><p>AFR| CANAL+</p> <span class="ekstra-yazi">#902</span></div>
+        <div class="kutu"><p>AFR| GENERAL</p> <span class="ekstra-yazi">#25</span></div>
+        <div class="kutu"><p>AFR| SOMALI</p> <span class="ekstra-yazi">#103</span></div>
+        <div class="kutu"><p>AFR| DSTV NETWORK</p> <span class="ekstra-yazi">#610</span></div>
+        <div class="kutu"><p>ARMENIA</p> <span class="ekstra-yazi">#350</span></div>
+        <div class="kutu"><p>GR| GREECE DIGEA</p> <span class="ekstra-yazi">#1613</span></div>
+        <div class="kutu"><p>GR| GREECE SPORTS</p> <span class="ekstra-yazi">#1614</span></div>
+        <div class="kutu"><p>GR| GREECE DOCUMENTARIES</p> <span class="ekstra-yazi">#1616</span></div>
+        <div class="kutu"><p>GR| GREECE KIDS</p> <span class="ekstra-yazi">#1617</span></div>
+        <div class="kutu"><p>GR| GREECE CINEMA</p> <span class="ekstra-yazi">#1615</span></div>
+        <div class="kutu"><p>GREECE 24/7</p> <span class="ekstra-yazi">#1558</span></div>
+        <div class="kutu"><p>CY| CYPRUS GENERAL</p> <span class="ekstra-yazi">#1619</span></div>
+        <div class="kutu"><p>CY| CYPRUS LEAGUE</p> <span class="ekstra-yazi">#1620</span></div>
+        <div class="kutu"><p>GREECE / CYPRUS</p> <span class="ekstra-yazi">#97</span></div>
+        <div class="kutu"><p>GREECE PREMIUM VIP</p> <span class="ekstra-yazi">#1075</span></div>
+        <div class="kutu"><p>MALTA</p> <span class="ekstra-yazi">#569</span></div>
+        <div class="kutu"><p>CRB| CARIBBEAN</p> <span class="ekstra-yazi">#489</span></div>
+        <div class="kutu"><p>CRB| ESPN PLAY PPV</p> <span class="ekstra-yazi">#1624</span></div>
+        <div class="kutu"><p>LAT| GENERAL</p> <span class="ekstra-yazi">#166</span></div>
+        <div class="kutu"><p>LAT| VENEZULA</p> <span class="ekstra-yazi">#1013</span></div>
+        <div class="kutu"><p>LAT| PANAMA</p> <span class="ekstra-yazi">#527</span></div>
+        <div class="kutu"><p>LAT| GUATEMALA</p> <span class="ekstra-yazi">#1031</span></div>
+        <div class="kutu"><p>LAT| NICARAGUA</p> <span class="ekstra-yazi">#1014</span></div>
+        <div class="kutu"><p>LAT| HONDURAS</p> <span class="ekstra-yazi">#627</span></div>
+        <div class="kutu"><p>LAT| ARGENTINA</p> <span class="ekstra-yazi">#152</span></div>
+        <div class="kutu"><p>LAT| CHILE</p> <span class="ekstra-yazi">#153</span></div>
+        <div class="kutu"><p>LAT| COLOMBIA</p> <span class="ekstra-yazi">#154</span></div>
+        <div class="kutu"><p>LAT| PERU</p> <span class="ekstra-yazi">#155</span></div>
+        <div class="kutu"><p>LAT| COSTA RICA</p> <span class="ekstra-yazi">#1015</span></div>
+        <div class="kutu"><p>LAT| R. DOMINICANA</p> <span class="ekstra-yazi">#163</span></div>
+        <div class="kutu"><p>LAT| ECUADOR</p> <span class="ekstra-yazi">#164</span></div>
+        <div class="kutu"><p>LAT| ECUADOR DAZN PPV</p> <span class="ekstra-yazi">#1524</span></div>
+        <div class="kutu"><p>LAT| PELICULA</p> <span class="ekstra-yazi">#185</span></div>
+        <div class="kutu"><p>LAT| EL SALVADOR</p> <span class="ekstra-yazi">#214</span></div>
+        <div class="kutu"><p>LAT| MEXICO</p> <span class="ekstra-yazi">#151</span></div>
+        <div class="kutu"><p>LAT| VIX MEXICO</p> <span class="ekstra-yazi">#1667</span></div>
+        <div class="kutu"><p>LAT| URUGUAY</p> <span class="ekstra-yazi">#165</span></div>
+        <div class="kutu"><p>ALBANIA</p> <span class="ekstra-yazi">#132</span></div>
+        <div class="kutu"><p>KOSOVO</p> <span class="ekstra-yazi">#1366</span></div>
+        <div class="kutu"><p>SLOVENIA</p> <span class="ekstra-yazi">#576</span></div>
+        <div class="kutu"><p>BOSNIA</p> <span class="ekstra-yazi">#573</span></div>
+        <div class="kutu"><p>SERBIA</p> <span class="ekstra-yazi">#572</span></div>
+        <div class="kutu"><p>CROATIA</p> <span class="ekstra-yazi">#571</span></div>
+        <div class="kutu"><p>MACEDONIA</p> <span class="ekstra-yazi">#574</span></div>
+        <div class="kutu"><p>MONTENEGRO</p> <span class="ekstra-yazi">#575</span></div>
+        <div class="kutu"><p>EXYU| SPORTSKI KANALI</p> <span class="ekstra-yazi">#577</span></div>
+        <div class="kutu"><p>EXYU| PINK MEDIA</p> <span class="ekstra-yazi">#1384</span></div>
+        <div class="kutu"><p>EXYU| FILMSKI KANALI</p> <span class="ekstra-yazi">#1385</span></div>
+        <div class="kutu"><p>EXYU| MUZICKI KANALI</p> <span class="ekstra-yazi">#1386</span></div>
+        <div class="kutu"><p>EXYU| DOKUMENTARNI</p> <span class="ekstra-yazi">#1387</span></div>
+        <div class="kutu"><p>EXYU| DJECJI KANALI</p> <span class="ekstra-yazi">#1388</span></div>
+        <div class="kutu"><p>EXYU| 24/7</p> <span class="ekstra-yazi">#1641</span></div>
+        <div class="kutu"><p>ISRAEL VIP</p> <span class="ekstra-yazi">#339</span></div>
+        <div class="kutu"><p>ISRAEL HD</p> <span class="ekstra-yazi">#1312</span></div>
+        <div class="kutu"><p>LITHUANIA</p> <span class="ekstra-yazi">#405</span></div>
+        <div class="kutu"><p>LATVIA</p> <span class="ekstra-yazi">#1066</span></div>
+        <div class="kutu"><p>ESTONIA</p> <span class="ekstra-yazi">#538</span></div>
+        <div class="kutu"><p>HUNGARY</p> <span class="ekstra-yazi">#340</span></div>
+        <div class="kutu"><p>CZ| GENERAL</p> <span class="ekstra-yazi">#1633</span></div>
+        <div class="kutu"><p>CZ| NOVA</p> <span class="ekstra-yazi">#1634</span></div>
+        <div class="kutu"><p>CZ| PRIMA</p> <span class="ekstra-yazi">#1635</span></div>
+        <div class="kutu"><p>CZ| ZÁBAVA</p> <span class="ekstra-yazi">#1636</span></div>
+        <div class="kutu"><p>CZ| SPORTS</p> <span class="ekstra-yazi">#1637</span></div>
+        <div class="kutu"><p>CZ| HUDBA</p> <span class="ekstra-yazi">#1638</span></div>
+        <div class="kutu"><p>CZ| DETI</p> <span class="ekstra-yazi">#1639</span></div>
+        <div class="kutu"><p>CZ| KULTURNÍ</p> <span class="ekstra-yazi">#1640</span></div>
+        <div class="kutu"><p>ROMANIA</p> <span class="ekstra-yazi">#105</span></div>
+        <div class="kutu"><p>BULGARIA</p> <span class="ekstra-yazi">#112</span></div>
+        <div class="kutu"><p>RUSSIA</p> <span class="ekstra-yazi">#126</span></div>
+        <div class="kutu"><p>UKRAINE</p> <span class="ekstra-yazi">#406</span></div>
+        <div class="kutu"><p>GEORGIA</p> <span class="ekstra-yazi">#351</span></div>
+        <div class="kutu"><p>KAZACHSTAN</p> <span class="ekstra-yazi">#613</span></div>
+        <div class="kutu"><p>IRAN</p> <span class="ekstra-yazi">#31</span></div>
+        <div class="kutu"><p>AFGHANISTAN</p> <span class="ekstra-yazi">#33</span></div>
+        <div class="kutu"><p>ASIA | PREMIUM VIP</p> <span class="ekstra-yazi">#1055</span></div>
+        <div class="kutu"><p>ASIA | INDIA EU</p> <span class="ekstra-yazi">#35</span></div>
+        <div class="kutu"><p>ASIA | INDIA</p> <span class="ekstra-yazi">#127</span></div>
+        <div class="kutu"><p>ASIA | PAKISTAN</p> <span class="ekstra-yazi">#91</span></div>
+        <div class="kutu"><p>ASIA | ENGLISH</p> <span class="ekstra-yazi">#374</span></div>
+        <div class="kutu"><p>ASIA | TAMIL</p> <span class="ekstra-yazi">#368</span></div>
+        <div class="kutu"><p>ASIA | SPORTS</p> <span class="ekstra-yazi">#96</span></div>
+        <div class="kutu"><p>ASIA | PUNJABI</p> <span class="ekstra-yazi">#372</span></div>
+        <div class="kutu"><p>ASIA | GUJARATI/ASSAM</p> <span class="ekstra-yazi">#370</span></div>
+        <div class="kutu"><p>ASIA | MALAYALAM</p> <span class="ekstra-yazi">#371</span></div>
+        <div class="kutu"><p>ASIA | MARATHI</p> <span class="ekstra-yazi">#376</span></div>
+        <div class="kutu"><p>ASIA | TELEGU</p> <span class="ekstra-yazi">#373</span></div>
+        <div class="kutu"><p>ASIA | KANNADA</p> <span class="ekstra-yazi">#377</span></div>
+        <div class="kutu"><p>ASIA | SINHALA</p> <span class="ekstra-yazi">#477</span></div>
+        <div class="kutu"><p>ASIA | BENGALI/BANGLA</p> <span class="ekstra-yazi">#369</span></div>
+        <div class="kutu"><p>ASIA | BHOJPURI/ODISHA</p> <span class="ekstra-yazi">#378</span></div>
+        <div class="kutu"><p>NEPAL</p> <span class="ekstra-yazi">#901</span></div>
+        <div class="kutu"><p>BANGLADESH</p> <span class="ekstra-yazi">#658</span></div>
+        <div class="kutu"><p>SINGAPORE</p> <span class="ekstra-yazi">#1281</span></div>
+        <div class="kutu"><p>CHINA / HONGKONG</p> <span class="ekstra-yazi">#407</span></div>
+        <div class="kutu"><p>SOUTH KOREA</p> <span class="ekstra-yazi">#409</span></div>
+        <div class="kutu"><p>INDONESIA</p> <span class="ekstra-yazi">#298</span></div>
+        <div class="kutu"><p>THAILAND</p> <span class="ekstra-yazi">#352</span></div>
+        <div class="kutu"><p>TAIWAN</p> <span class="ekstra-yazi">#635</span></div>
+        <div class="kutu"><p>VIETNAM</p> <span class="ekstra-yazi">#353</span></div>
+        <div class="kutu"><p>MALAYSIA</p> <span class="ekstra-yazi">#355</span></div>
+        <div class="kutu"><p>JP| DAZN PPV</p> <span class="ekstra-yazi">#1535</span></div>
+        <div class="kutu"><p>JAPAN</p> <span class="ekstra-yazi">#1125</span></div>
+        <div class="kutu"><p>PHILIPPINES</p> <span class="ekstra-yazi">#357</span></div>
+        <div class="kutu"><p>MU| MUSIC CONCERTS</p> <span class="ekstra-yazi">#1177</span></div>
+        <div class="kutu"><p>SU| SURINAME</p> <span class="ekstra-yazi">#1058</span></div>
+        <div class="kutu"><p>WORLD CRICKET</p> <span class="ekstra-yazi">#1356</span></div>
+        <div class="kutu"><p>HORSE RACING</p> <span class="ekstra-yazi">#1249</span></div>
+        <div class="kutu"><p>VP| VIAPLAY PPV [MULTI AUDIO]</p> <span class="ekstra-yazi">#1601</span></div>
+    </div>
+
+    <script>
+        // Initialisation de SortableJS
+        const container = document.getElementById('sortable-list');
+        new Sortable(container, {
+            animation: 150,
+            ghostClass: 'sortable-ghost'
+        });
+
+        // Fonction de génération du code
+        function generateCode() {
+            // 1. Récupérer le contenu HTML trié
+            const sortedContent = container.innerHTML;
+
+            // 2. Préparer le CSS (copié-collé de ta demande)
+            const styleBlock = `
+  <style>
+    .kutu-kapsayici {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+    }
+
+    .kutu {
+      position: relative;
+      flex: 0 0 calc(33.33% - 20px);
+      margin-bottom: 20px;
+      padding: 20px;
+      box-sizing: border-box;
+      background-color: white;
+      color: black;
+      border: 1px solid black;
+      border-radius: 5px;
+      box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);
+    }
+
+    .kutu .ekstra-yazi {
+      position: absolute;
+      top: 0;
+      right: 10px;
+      color: #123;
+    }
+
+    @media(max-width:768px) {
+      .kutu {
+        flex: 0 0 calc(100% - 20px);
+      }
+    }
+  </style>`;
+
+            // 3. Assembler le tout dans la structure finale
+            const finalHTML = `<div class="elementor-widget-container">
+${styleBlock}
+  <div class="kutu-kapsayici">
+    ${sortedContent.trim()}
+  </div>
+</div>`;
+
+            // 4. Afficher dans la zone de texte
+            const outputArea = document.getElementById('resultContainer');
+            const outputTextarea = document.getElementById('finalCode');
+            
+            outputArea.style.display = 'block';
+            outputTextarea.value = finalHTML;
+
+            // Scroll vers le résultat
+            outputArea.scrollIntoView({ behavior: 'smooth' });
+        }
+    </script>
+</body>
+</html>
