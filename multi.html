@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trieur de Div WordPress (Multi-Drag)</title>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+
+    <style>
+        /* --- STYLE DE L'INTERFACE ADMIN --- */
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f4f6f8; padding: 20px; max-width: 1200px; margin: 0 auto; }
+        
+        h2 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; margin-top: 30px;}
+        
+        .control-panel { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        
+        textarea { width: 100%; height: 150px; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-family: monospace; font-size: 12px; box-sizing: border-box; }
+        
+        button { background-color: #3498db; color: white; border: none; padding: 12px 24px; font-size: 16px; border-radius: 4px; cursor: pointer; transition: background 0.2s; margin-top: 10px; font-weight: bold; }
+        button:hover { background-color: #2980b9; }
+        button.btn-success { background-color: #27ae60; }
+        button.btn-success:hover { background-color: #219150; }
+
+        /* --- ZONE DE TRI (VISUEL) --- */
+        #visualContainer {
+            background: #eef2f7;
+            padding: 20px;
+            border: 2px dashed #bdc3c7;
+            border-radius: 8px;
+            min-height: 200px;
+            margin: 20px 0;
+        }
+
+        /* --- STYLE CSS ORIGINAL --- */
+        .kutu-kapsayici {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+        }
+
+        .kutu {
+            position: relative;
+            flex: 0 0 calc(33.33% - 20px);
+            margin-bottom: 20px;
+            padding: 20px;
+            box-sizing: border-box;
+            background-color: white;
+            color: black;
+            border: 1px solid black;
+            border-radius: 5px;
+            box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);
+            cursor: move; 
+            user-select: none;
+            transition: background-color 0.2s, transform 0.2s; /* Animation fluide */
+        }
+
+        .kutu:hover { background-color: #f9f9f9; border-color: #3498db; }
+        
+        /* Style fantôme (l'élément qu'on déplace) */
+        .sortable-ghost { opacity: 0.4; background: #c8ebfb; border: 2px dashed #3498db; }
+        
+        /* Style pour les éléments sélectionnés (Multi-Drag) */
+        .sortable-selected {
+            background-color: #d1ecf1 !important;
+            border: 2px solid #17a2b8 !important;
+            box-shadow: 0 0 10px rgba(23, 162, 184, 0.5);
+            transform: scale(0.98);
+        }
+
+        /* Style pour le groupe qu'on déplace */
+        .sortable-drag {
+            cursor: grabbing;
+        }
+
+        .kutu .ekstra-yazi {
+            position: absolute;
+            top: 0;
+            right: 10px;
+            color: #123;
+        }
+
+        @media(max-width:768px) {
+            .kutu { flex: 0 0 calc(100% - 20px); }
+        }
+
+        .instructions {
+            background: #fff3cd;
+            padding: 10px;
+            border-left: 5px solid #ffc107;
+            margin-bottom: 15px;
+            font-size: 14px;
+            color: #856404;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="control-panel">
+        <h2>1. Collez le code HTML existant ici</h2>
+        <textarea id="inputHtml" placeholder="Collez tout le code HTML (celui avec <div class='elementor-widget-container'>...)"></textarea>
+        <button onclick="parseAndLoad()">⬇️ Charger pour trier</button>
+    </div>
+
+    <div id="visualWrapper" style="display:none;">
+        <h2>2. Faites votre tri</h2>
+        <div class="instructions">
+            <strong>Astuce Multi-Drag :</strong> Maintenez la touche <code>Ctrl</code> (ou <code>Cmd</code> sur Mac) et cliquez sur plusieurs boîtes pour les sélectionner (elles deviendront bleues). Ensuite, déplacez-en une pour bouger tout le groupe !
+        </div>
+        <div id="visualContainer" class="kutu-kapsayici"></div>
+    </div>
+
+    <div id="outputWrapper" class="control-panel" style="display:none;">
+        <h2>3. Résultat</h2>
+        <button class="btn-success" onclick="generateOutput()">✅ Générer le nouveau HTML</button>
+        <br><br>
+        <textarea id="outputHtml" placeholder="Le code trié apparaîtra ici..."></textarea>
+    </div>
+
+    <script>
+        // --- NOUVEAU : Tentative de montage du plugin MultiDrag si nécessaire ---
+        // Note: La version CDN standard n'inclut pas toujours le plugin MultiDrag par défaut.
+        // Si le multi-drag ne fonctionne pas, il faudra utiliser une version "bundle" de SortableJS.
+        // Mais nous configurons ici les options correctement.
+
+        var el = document.getElementById('visualContainer');
+        var sortable = Sortable.create(el, {
+            animation: 150,
+            ghostClass: 'sortable-ghost',
+            
+            // Configuration Multi-Drag
+            multiDrag: true, // Active la sélection multiple
+            selectedClass: 'sortable-selected', // Classe CSS appliquée aux éléments sélectionnés
+            fallbackTolerance: 3, // Aide à distinguer un clic d'un début de glisser
+            
+            // Désélectionner si on clique en dehors
+            onDeselect: function(evt) {
+                // Optionnel : logique si besoin
+            }
+        });
+
+        // Fonction 1 : Lire le HTML collé et extraire les .kutu
+        function parseAndLoad() {
+            const input = document.getElementById('inputHtml').value;
+            const visualContainer = document.getElementById('visualContainer');
+            
+            if (!input.trim()) {
+                alert("Veuillez coller du code HTML d'abord.");
+                return;
+            }
+
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(input, 'text/html');
+            const items = doc.querySelectorAll('.kutu');
+
+            if (items.length === 0) {
+                alert("Aucune div avec la classe '.kutu' n'a été trouvée.");
+                return;
+            }
+
+            visualContainer.innerHTML = '';
+            items.forEach(item => {
+                // Nettoyage préventif au chargement
+                item.classList.remove('sortable-selected');
+                item.classList.remove('sortable-ghost');
+                visualContainer.appendChild(item);
+            });
+
+            document.getElementById('visualWrapper').style.display = 'block';
+            document.getElementById('outputWrapper').style.display = 'block';
+            document.getElementById('visualWrapper').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Fonction 2 : Reconstruire le HTML complet
+        function generateOutput() {
+            // Nettoyage avant export
+            // On doit enlever la classe de sélection, sinon elle restera dans le code final
+            const allItems = document.querySelectorAll('#visualContainer .kutu');
+            allItems.forEach(item => {
+                item.classList.remove('sortable-selected');
+                // On enlève aussi les styles inline ajoutés par SortableJS pendant le drag
+                item.style.transform = ''; 
+                item.style.transition = '';
+            });
+
+            const containerContent = document.getElementById('visualContainer').innerHTML;
+
+            const cssBlock = `
+  <style>
+    .kutu-kapsayici {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+    }
+
+    .kutu {
+      position: relative;
+      flex: 0 0 calc(33.33% - 20px);
+      margin-bottom: 20px;
+      padding: 20px;
+      box-sizing: border-box;
+      background-color: white;
+      color: black;
+      border: 1px solid black;
+      border-radius: 5px;
+      box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);
+    }
+
+    .kutu .ekstra-yazi {
+      position: absolute;
+      top: 0;
+      right: 10px;
+      color: #123;
+    }
+
+    @media(max-width:768px) {
+      .kutu {
+        flex: 0 0 calc(100% - 20px);
+      }
+    }
+  </style>`;
+
+            const finalHtml = `<div class="elementor-widget-container">
+${cssBlock}
+  <div class="kutu-kapsayici">
+    ${containerContent.trim()}
+  </div>
+</div>`;
+
+            document.getElementById('outputHtml').value = finalHtml;
+        }
+    </script>
+
+</body>
+</html>
